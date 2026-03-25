@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BiblioTec — Sistema de Biblioteca</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0f1b2d;--navy2:#162236;--navy3:#1e2f47;--navy4:#243855;
+  --amber:#e8a045;--amber2:#f0b860;--amber3:#f7d090;
+  --slate:#8fa3bc;--slate2:#b0c4d8;--slate3:#d6e4f0;--slate4:#edf3f8;
+  --text:#f0f4f8;--text2:#b8ccde;--text3:#7a95ae;
+  --red:#e05c5c;--green:#4cad7e;--blue:#4a90d9;--purple:#8b72c8;
+  --surface:#162236;--surface2:#1e2f47;--surface3:#243855;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --shadow:0 4px 24px rgba(0,0,0,0.35);
+  --r:10px;--r2:14px;--r3:18px;
+  --font-display:'Playfair Display',Georgia,serif;
+  --font-body:'DM Sans',system-ui,sans-serif;
+}
+html,body{height:100%;background:var(--navy);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.6;overflow:hidden}
+
+/* ── LAYOUT ── */
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{width:240px;min-width:240px;background:var(--navy2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;z-index:10}
+.sidebar-brand{padding:28px 24px 20px;border-bottom:1px solid var(--border)}
+.sidebar-brand h1{font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text);letter-spacing:.3px}
+.sidebar-brand span{color:var(--amber);font-style:italic}
+.sidebar-brand p{font-size:11px;color:var(--text3);margin-top:3px;letter-spacing:.5px;text-transform:uppercase}
+.nav-section{padding:16px 14px 8px}
+.nav-label{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);padding:0 10px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;color:var(--text3);font-size:13.5px;font-weight:400;transition:all .15s;margin-bottom:2px;position:relative}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.7}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:linear-gradient(135deg,rgba(232,160,69,.18),rgba(232,160,69,.08));color:var(--amber2);font-weight:500}
+.nav-item.active svg{opacity:1}
+.nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);height:60%;width:3px;background:var(--amber);border-radius:2px}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px}
+.sidebar-bottom{margin-top:auto;padding:16px;border-top:1px solid var(--border)}
+.user-card{display:flex;align-items:center;gap:10px}
+.user-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--amber),var(--purple));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.user-info p{font-size:13px;font-weight:500;color:var(--text)}
+.user-info span{font-size:11px;color:var(--text3)}
+
+/* ── MAIN ── */
+.main{flex:1;overflow-y:auto;background:var(--navy)}
+.screen{display:none;min-height:100vh;padding:32px 36px}
+.screen.active{display:block}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px}
+.page-header-left h2{font-family:var(--font-display);font-size:26px;font-weight:600;color:var(--text)}
+.page-header-left p{font-size:13px;color:var(--text3);margin-top:4px}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;border:none;font-family:var(--font-body);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn-primary{background:var(--amber);color:var(--navy)}
+.btn-primary:hover{background:var(--amber2);transform:translateY(-1px)}
+.btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border2)}
+.btn-ghost:hover{background:var(--surface3);color:var(--text)}
+.btn-sm{padding:6px 13px;font-size:12px}
+.btn-danger{background:rgba(224,92,92,.15);color:var(--red);border:1px solid rgba(224,92,92,.25)}
+.btn-danger:hover{background:rgba(224,92,92,.25)}
+.btn-success{background:rgba(76,173,126,.15);color:var(--green);border:1px solid rgba(76,173,126,.25)}
+.btn-success:hover{background:rgba(76,173,126,.25)}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:20px}
+.card-sm{padding:16px}
+
+/* ── DASHBOARD ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:20px;position:relative;overflow:hidden;transition:border-color .15s}
+.stat-card:hover{border-color:var(--border2)}
+.stat-card::after{content:'';position:absolute;top:0;right:0;width:80px;height:80px;border-radius:0 var(--r2) 0 100%;opacity:.06}
+.stat-card.amber::after{background:var(--amber)}
+.stat-card.green::after{background:var(--green)}
+.stat-card.red::after{background:var(--red)}
+.stat-card.blue::after{background:var(--blue)}
+.stat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.stat-icon.amber{background:rgba(232,160,69,.15);color:var(--amber)}
+.stat-icon.green{background:rgba(76,173,126,.15);color:var(--green)}
+.stat-icon.red{background:rgba(224,92,92,.15);color:var(--red)}
+.stat-icon.blue{background:rgba(74,144,217,.15);color:var(--blue)}
+.stat-card .value{font-size:28px;font-weight:600;color:var(--text);font-family:var(--font-display);line-height:1}
+.stat-card .label{font-size:12px;color:var(--text3);margin-top:6px}
+.stat-card .change{font-size:11px;margin-top:8px;color:var(--green)}
+
+.dash-grid{display:grid;grid-template-columns:1fr 340px;gap:16px}
+.section-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:14px;letter-spacing:.2px}
+.activity-list{display:flex;flex-direction:column;gap:2px}
+.activity-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;transition:background .1s}
+.activity-item:hover{background:var(--surface2)}
+.act-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.act-dot.amber{background:var(--amber)}
+.act-dot.green{background:var(--green)}
+.act-dot.red{background:var(--red)}
+.act-dot.blue{background:var(--blue)}
+.act-text{flex:1;font-size:13px;color:var(--text2)}
+.act-text b{color:var(--text);font-weight:500}
+.act-time{font-size:11px;color:var(--text3)}
+.popular-list{display:flex;flex-direction:column;gap:6px}
+.pop-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.pop-item:last-child{border-bottom:none}
+.pop-rank{font-size:11px;color:var(--text3);font-weight:600;min-width:18px}
+.pop-cover{width:30px;height:42px;border-radius:4px;object-fit:cover;flex-shrink:0;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3)}
+.pop-info{flex:1;min-width:0}
+.pop-title{font-size:12.5px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pop-author{font-size:11px;color:var(--text3)}
+.pop-count{font-size:12px;font-weight:600;color:var(--amber)}
+.mini-bar{height:4px;border-radius:2px;background:var(--surface3);margin-top:4px;overflow:hidden}
+.mini-bar-fill{height:100%;border-radius:2px;background:var(--amber);transition:width .6s ease}
+.quick-stats{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.quick-stat{display:flex;justify-content:space-between;align-items:center;font-size:12.5px}
+.quick-stat span:first-child{color:var(--text3)}
+.quick-stat span:last-child{font-weight:600;color:var(--text)}
+
+/* ── CATALOG ── */
+.search-bar{display:flex;gap:10px;margin-bottom:20px}
+.search-wrap{flex:1;position:relative}
+.search-wrap input{width:100%;padding:10px 14px 10px 40px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;transition:border-color .15s}
+.search-wrap input:focus{border-color:rgba(232,160,69,.5)}
+.search-wrap input::placeholder{color:var(--text3)}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);width:16px;height:16px}
+.filter-pills{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.pill{padding:5px 14px;border-radius:20px;border:1px solid var(--border2);color:var(--text3);font-size:12px;cursor:pointer;transition:all .15s;background:transparent}
+.pill:hover{border-color:var(--amber);color:var(--amber2)}
+.pill.active{background:rgba(232,160,69,.15);border-color:var(--amber);color:var(--amber2);font-weight:500}
+.books-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px}
+.book-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;cursor:pointer;transition:all .2s}
+.book-card:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:var(--shadow)}
+.book-cover{height:180px;display:flex;align-items:center;justify-content:center;font-size:40px;position:relative}
+.book-cover-0{background:linear-gradient(135deg,#1a3a6b,#2d5fa3)}
+.book-cover-1{background:linear-gradient(135deg,#3d1a5c,#7b3fa8)}
+.book-cover-2{background:linear-gradient(135deg,#1a4a35,#2d8a5c)}
+.book-cover-3{background:linear-gradient(135deg,#5c2020,#a03333)}
+.book-cover-4{background:linear-gradient(135deg,#4a3500,#9a7010)}
+.book-cover-5{background:linear-gradient(135deg,#1a3a50,#2d7080)}
+.book-cover-6{background:linear-gradient(135deg,#2a1a50,#5a3a90)}
+.book-cover-7{background:linear-gradient(135deg,#0d2a1a,#1a6040)}
+.book-avail{position:absolute;top:8px;right:8px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px}
+.book-avail.yes{background:rgba(76,173,126,.25);color:#6dd9a6;border:1px solid rgba(76,173,126,.3)}
+.book-avail.no{background:rgba(224,92,92,.2);color:#f08080;border:1px solid rgba(224,92,92,.25)}
+.book-avail.few{background:rgba(232,160,69,.2);color:var(--amber2);border:1px solid rgba(232,160,69,.25)}
+.book-info{padding:12px}
+.book-title{font-size:13px;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:3px}
+.book-author{font-size:11.5px;color:var(--text3);margin-bottom:8px}
+.book-meta{display:flex;justify-content:space-between;align-items:center}
+.book-category{font-size:10px;padding:2px 7px;border-radius:10px;background:var(--surface3);color:var(--text3)}
+.book-copies{font-size:11px;color:var(--text3)}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;border-radius:var(--r2);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--surface2)}
+th{padding:11px 16px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);white-space:nowrap;border-bottom:1px solid var(--border)}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--surface2)}
+td{padding:12px 16px;font-size:13px;color:var(--text2);vertical-align:middle}
+td .main-text{color:var(--text);font-weight:500;font-size:13.5px}
+td .sub-text{font-size:11.5px;color:var(--text3)}
+.status-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
+.status-badge::before{content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.badge-green{background:rgba(76,173,126,.15);color:#6dd9a6}.badge-green::before{background:#6dd9a6}
+.badge-amber{background:rgba(232,160,69,.15);color:var(--amber2)}.badge-amber::before{background:var(--amber)}
+.badge-red{background:rgba(224,92,92,.15);color:#f08080}.badge-red::before{background:#f08080}
+.badge-slate{background:var(--surface3);color:var(--text3)}.badge-slate::before{background:var(--text3)}
+.badge-blue{background:rgba(74,144,217,.15);color:#7ab4e8}.badge-blue::before{background:#7ab4e8}
+.actions-cell{display:flex;gap:6px;justify-content:flex-end}
+.table-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.count-text{font-size:13px;color:var(--text3)}
+
+/* ── USERS ── */
+.user-row-avatar{width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.avatar-0{background:linear-gradient(135deg,#4a90d9,#7bb8f0)}
+.avatar-1{background:linear-gradient(135deg,#8b72c8,#b09ee0)}
+.avatar-2{background:linear-gradient(135deg,#e05c5c,#f09090)}
+.avatar-3{background:linear-gradient(135deg,#4cad7e,#80d4a8)}
+.avatar-4{background:linear-gradient(135deg,#e8a045,#f7d090)}
+.avatar-5{background:linear-gradient(135deg,#d44592,#f080b8)}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r3);padding:28px;width:440px;max-width:95vw;animation:slide-up .2s ease}
+@keyframes slide-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.modal-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.modal-header h3{font-family:var(--font-display);font-size:18px;font-weight:600}
+.modal-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:20px;line-height:1;padding:2px 6px;border-radius:6px;transition:background .1s}
+.modal-close:hover{background:var(--surface2);color:var(--text)}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;font-weight:500;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.form-group input,.form-group select{width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:13.5px;outline:none;transition:border-color .15s}
+.form-group input:focus,.form-group select:focus{border-color:rgba(232,160,69,.5)}
+.form-group select option{background:var(--navy2)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;padding-top:16px;border-top:1px solid var(--border)}
+
+/* ── FINES ── */
+.fine-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.fine-card{padding:16px 18px;border-radius:var(--r2);border:1px solid var(--border);background:var(--surface)}
+.fine-card .val{font-size:22px;font-weight:700;font-family:var(--font-display)}
+.fine-card .lab{font-size:11.5px;color:var(--text3);margin-top:4px}
+.fine-card.red-c{border-color:rgba(224,92,92,.25);background:rgba(224,92,92,.05)}
+.fine-card.red-c .val{color:#f08080}
+.fine-card.amber-c{border-color:rgba(232,160,69,.25);background:rgba(232,160,69,.05)}
+.fine-card.amber-c .val{color:var(--amber2)}
+.fine-card.green-c{border-color:rgba(76,173,126,.25);background:rgba(76,173,126,.05)}
+.fine-card.green-c .val{color:#6dd9a6}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--navy4)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--text);box-shadow:var(--shadow);z-index:200;display:none;align-items:center;gap:10px;animation:slide-up .2s ease}
+.toast.show{display:flex}
+.toast.toast-success{border-left:3px solid var(--green)}
+.toast.toast-error{border-left:3px solid var(--red)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <h1>Biblio<span>Tec</span></h1>
+    <p>Sistema de Biblioteca</p>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Principal</div>
+    <div class="nav-item active" onclick="go('dash')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="go('catalog')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      Catálogo
+    </div>
+    <div class="nav-item" onclick="go('loans')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="12" y2="16"/></svg>
+      Empréstimos
+      <span class="nav-badge">3</span>
+    </div>
+    <div class="nav-item" onclick="go('reserves')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3l7 4 7-4v14l-7 4-7-4V3z"/></svg>
+      Reservas
+    </div>
+    <div class="nav-item" onclick="go('fines')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Multas
+      <span class="nav-badge">5</span>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Gerenciamento</div>
+    <div class="nav-item" onclick="go('users')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Usuários
+    </div>
+    <div class="nav-item" onclick="go('reports')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="3" y1="20" x2="21" y2="20"/></svg>
+      Relatórios
+    </div>
+  </div>
+
+  <div class="sidebar-bottom">
+    <div class="user-card">
+      <div class="user-avatar">AB</div>
+      <div class="user-info">
+        <p>Ana Bibliotecária</p>
+        <span>Administradora</span>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- DASHBOARD -->
+  <div class="screen active" id="screen-dash">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h2>Dashboard</h2>
+        <p>Visão geral · Terça-feira, 24 de março de 2026</p>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('modal-loan')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Novo Empréstimo
+      </button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card amber">
+        <div class="stat-icon amber">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        </div>
+        <div class="value">3.847</div>
+        <div class="label">Livros no acervo</div>
+        <div class="change">↑ 12 adicionados este mês</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon green">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+        </div>
+        <div class="value">142</div>
+        <div class="label">Empréstimos ativos</div>
+        <div class="change">↑ 8 desde ontem</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon red">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div class="value">18</div>
+        <div class="label">Atrasos pendentes</div>
+        <div class="change" style="color:var(--red)">↑ 3 novos hoje</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-icon blue">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/></svg>
+        </div>
+        <div class="value">624</div>
+        <div class="label">Usuários cadastrados</div>
+        <div class="change">↑ 4 esta semana</div>
+      </div>
+    </div>
+
+    <div class="dash-grid">
+      <div class="card">
+        <div class="section-title">Atividade recente</div>
+        <div class="activity-list">
+          <div class="activity-item"><div class="act-dot green"></div><div class="act-text"><b>Pedro Alves</b> devolveu "Dom Casmurro"</div><div class="act-time">Agora</div></div>
+          <div class="activity-item"><div class="act-dot amber"></div><div class="act-text"><b>Maria Santos</b> emprestou "O Senhor dos Anéis"</div><div class="act-time">5 min</div></div>
+          <div class="activity-item"><div class="act-dot red"></div><div class="act-text"><b>João Lima</b> — 3 dias de atraso em "1984"</div><div class="act-time">2h</div></div>
+          <div class="activity-item"><div class="act-dot blue"></div><div class="act-text"><b>Ana Costa</b> fez reserva de "O Hobbit"</div><div class="act-time">3h</div></div>
+          <div class="activity-item"><div class="act-dot green"></div><div class="act-text"><b>Carla Melo</b> devolveu "A Moreninha"</div><div class="act-time">4h</div></div>
+          <div class="activity-item"><div class="act-dot amber"></div><div class="act-text"><b>Bruno Reis</b> renovou prazo de "Sapiens"</div><div class="act-time">5h</div></div>
+          <div class="activity-item"><div class="act-dot red"></div><div class="act-text"><b>Fernanda Cruz</b> pagou multa de R$ 4,50</div><div class="act-time">6h</div></div>
+          <div class="activity-item"><div class="act-dot blue"></div><div class="act-text"><b>Lucas Souza</b> foi cadastrado no sistema</div><div class="act-time">7h</div></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div class="section-title">Mais emprestados — março</div>
+          <div class="popular-list">
+            <div class="pop-item">
+              <span class="pop-rank">1</span>
+              <div class="pop-cover book-cover-0">📖</div>
+              <div class="pop-info">
+                <div class="pop-title">Dom Casmurro</div>
+                <div class="pop-author">Machado de Assis</div>
+                <div class="mini-bar"><div class="mini-bar-fill" style="width:95%"></div></div>
+              </div>
+              <span class="pop-count">38×</span>
+            </div>
+            <div class="pop-item">
+              <span class="pop-rank">2</span>
+              <div class="pop-cover book-cover-2">📖</div>
+              <div class="pop-info">
+                <div class="pop-title">Sapiens</div>
+                <div class="pop-author">Yuval Noah Harari</div>
+                <div class="mini-bar"><div class="mini-bar-fill" style="width:78%"></div></div>
+              </div>
+              <span class="pop-count">31×</span>
+            </div>
+            <div class="pop-item">
+              <span class="pop-rank">3</span>
+              <div class="pop-cover book-cover-4">📖</div>
+              <div class="pop-info">
+                <div class="pop-title">O Hobbit</div>
+                <div class="pop-author">J.R.R. Tolkien</div>
+                <div class="mini-bar"><div class="mini-bar-fill" style="width:65%"></div></div>
+              </div>
+              <span class="pop-count">26×</span>
+            </div>
+            <div class="pop-item">
+              <span class="pop-rank">4</span>
+              <div class="pop-cover book-cover-1">📖</div>
+              <div class="pop-info">
+                <div class="pop-title">1984</div>
+                <div class="pop-author">George Orwell</div>
+                <div class="mini-bar"><div class="mini-bar-fill" style="width:52%"></div></div>
+              </div>
+              <span class="pop-count">21×</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-sm">
+          <div class="section-title">Resumo do acervo</div>
+          <div class="quick-stats">
+            <div class="quick-stat"><span>Disponíveis</span><span style="color:var(--green)">3.241</span></div>
+            <div class="quick-stat"><span>Emprestados</span><span style="color:var(--amber)">508</span></div>
+            <div class="quick-stat"><span>Em reserva</span><span style="color:var(--blue)">98</span></div>
+            <div class="quick-stat"><span>Em manutenção</span><span style="color:var(--text3)">34</span></div>
+            <div class="quick-stat"><span>Multas abertas</span><span style="color:var(--red)">R$ 284,50</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATALOG -->
+  <div class="screen" id="screen-catalog">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h2>Catálogo de Livros</h2>
+        <p>3.847 obras cadastradas</p>
+      </div>
+      <button class="btn btn-primary" onclick="showToast('Formulário de cadastro aberto','success')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Cadastrar Obra
+      </button>
+    </div>
+
+    <div class="search-bar">
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Buscar por título, autor, ISBN…" oninput="filterBooks(this.value)"/>
+      </div>
+      <button class="btn btn-ghost">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+        Filtros
+      </button>
+    </div>
+
+    <div class="filter-pills">
+      <div class="pill active" onclick="togglePill(this,'Todos')">Todos</div>
+      <div class="pill" onclick="togglePill(this,'Literatura')">Literatura</div>
+      <div class="pill" onclick="togglePill(this,'Ciências')">Ciências</div>
+      <div class="pill" onclick="togglePill(this,'Tecnologia')">Tecnologia</div>
+      <div class="pill" onclick="togglePill(this,'História')">História</div>
+      <div class="pill" onclick="togglePill(this,'Filosofia')">Filosofia</div>
+      <div class="pill" onclick="togglePill(this,'Disponíveis')">Disponíveis</div>
+    </div>
+
+    <div class="books-grid" id="books-grid">
+      <!-- Books rendered by JS -->
+    </div>
+  </div>
+
+  <!-- LOANS -->
+  <div class="screen" id="screen-loans">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h2>Empréstimos</h2>
+        <p>Gerencie empréstimos ativos e histórico</p>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('modal-loan')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Novo Empréstimo
+      </button>
+    </div>
+
+    <div class="filter-pills" style="margin-bottom:16px">
+      <div class="pill active">Ativos (142)</div>
+      <div class="pill">Atrasados (18)</div>
+      <div class="pill">Devolvidos</div>
+      <div class="pill">Renovados</div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Usuário</th>
+            <th>Livro</th>
+            <th>Empréstimo</th>
+            <th>Devolução</th>
+            <th>Status</th>
+            <th style="text-align:right">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="loans-tbody">
+          <!-- filled by JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RESERVES -->
+  <div class="screen" id="screen-reserves">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h2>Reservas</h2>
+        <p>Fila de reservas por obra</p>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Usuário</th><th>Livro</th><th>Data reserva</th><th>Posição na fila</th><th>Status</th><th style="text-align:right">Ações</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><div class="main-text">Ana Costa</div><div class="sub-text">ana@email.com</div></td><td><div class="main-text">O Hobbit</div><div class="sub-text">Tolkien</div></td><td>20/03/2026</td><td style="text-align:center"><span style="background:var(--surface3);padding:3px 10px;border-radius:20px;font-size:12px">1ª</span></td><td><span class="status-badge badge-amber">Aguardando</span></td><td><div class="actions-cell"><button class="btn btn-sm btn-success" onclick="showToast('Reserva convertida em empréstimo','success')">Emprestar</button><button class="btn btn-sm btn-danger" onclick="showToast('Reserva cancelada','error')">Cancelar</button></div></td></tr>
+          <tr><td><div class="main-text">Carlos Rocha</div><div class="sub-text">carlos@email.com</div></td><td><div class="main-text">Sapiens</div><div class="sub-text">Harari</div></td><td>21/03/2026</td><td style="text-align:center"><span style="background:var(--surface3);padding:3px 10px;border-radius:20px;font-size:12px">2ª</span></td><td><span class="status-badge badge-slate">Na fila</span></td><td><div class="actions-cell"><button class="btn btn-sm btn-ghost btn-sm">Ver</button><button class="btn btn-sm btn-danger" onclick="showToast('Reserva cancelada','error')">Cancelar</button></div></td></tr>
+          <tr><td><div class="main-text">Beatriz Lima</div><div class="sub-text">bia@email.com</div></td><td><div class="main-text">Dom Casmurro</div><div class="sub-text">Machado de Assis</div></td><td>22/03/2026</td><td style="text-align:center"><span style="background:var(--surface3);padding:3px 10px;border-radius:20px;font-size:12px">1ª</span></td><td><span class="status-badge badge-green">Disponível</span></td><td><div class="actions-cell"><button class="btn btn-sm btn-success" onclick="showToast('Notificação enviada ao usuário','success')">Notificar</button><button class="btn btn-sm btn-primary btn-sm" onclick="showToast('Empréstimo registrado!','success')">Emprestar</button></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- FINES -->
+  <div class="screen" id="screen-fines">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h2>Multas</h2>
+        <p>Controle de multas por atraso</p>
+      </div>
+    </div>
+    <div class="fine-summary">
+      <div class="fine-card red-c">
+        <div class="val">R$ 284,50</div>
+        <div class="lab">Total em aberto</div>
+      </div>
+      <div class="fine-card amber-c">
+        <div class="val">18</div>
+        <div class="lab">Usuários com multa</div>
+      </div>
+      <div class="fine-card green-c">
+        <div class="val">R$ 96,00</div>
+        <div class="lab">Recebido este mês</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Usuário</th><th>Livro</th><th>Dias atraso</th><th>Valor</th><th>Status</th><th style="text-align:right">Ações</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><div class="main-text">João Lima</div><div class="sub-text">Matrícula 00234</div></td><td><div class="main-text">1984</div><div class="sub-text">Orwell</div></td><td style="text-align:center;color:var(--red);font-weight:600">3 dias</td><td style="font-weight:700;color:var(--amber2)">R$ 4,50</td><td><span class="status-badge badge-red">Em aberto</span></td><td><div class="actions-cell"><button class="btn btn-sm btn-success" onclick="showToast('Multa quitada com sucesso','success')">Quitar</button></div></td></tr>
+          <tr><td><div class="main-text">Fernanda Cruz</div><div class="sub-text">Matrícula 00891</div></td><td><div class="main-text">Pequeno Príncipe</div><div class="sub-text">Saint-Exupéry</div></td><td style="text-align:center;color:var(--red);font-weight:600">7 dias</td><td style="font-weight:700;color:var(--amber2)">R$ 10,50</td><td><span class="status-badge badge-red">Em aberto</span></td><td><div class="actions-cell"><button class="btn btn-sm btn-success" onclick="showToast('Multa quitada com sucesso','success')">Quitar</button></div></td></tr>
+          <tr><td><div class="main-text">Roberto Neto</div><div class="sub-text">Matrícula 00445</div></td><td><div class="main-text">A Moreninha</div><div class="sub-text">J. Macedo</div></td><td style="text-align:center;color:var(--amber);font-weight:600">1 dia</td><td style="font-weight:700;color:var(--amber2)">R$ 1,50</td><td><span class="status-badge badge-amber">Notificado</span></td><td><div class="actions-cell"><button class="btn btn-sm btn-success" onclick="showToast('Multa quitada com sucesso','success')">Quitar</button></div></td></tr>
+          <tr><td><div class="main-text">Sandra Melo</div><div class="sub-text">Matrícula 00672</div></td><td><div class="main-text">Sapiens</div><div class="sub-text">Harari</div></td><td style="text-align:center;color:var(--green);font-weight:600">—</td><td style="font-weight:700;color:var(--green)">R$ 6,00</td><td><span class="status-badge badge-green">Pago</span></td><td><div class="actions-cell"><button class="btn btn-sm btn-ghost btn-sm">Recibo</button></div></td></tr>
+          <tr><td><div class="main-text">Paulo Dias</div><div class="sub-text">Matrícula 00108</div></td><td><div class="main-text">Dom Casmurro</div><div class="sub-text">Machado</div></td><td style="text-align:center;color:var(--red);font-weight:600">12 dias</td><td style="font-weight:700;color:var(--amber2)">R$ 18,00</td><td><span class="status-badge badge-red">Em aberto</span></td><td><div class="actions-cell"><button class="btn btn-sm btn-ghost">Notif.</button><button class="btn btn-sm btn-success" onclick="showToast('Multa quitada com sucesso','success')">Quitar</button></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- USERS -->
+  <div class="screen" id="screen-users">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h2>Usuários</h2>
+        <p>Cadastro e gerenciamento de leitores</p>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('modal-user')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Novo Usuário
+      </button>
+    </div>
+
+    <div class="search-bar" style="margin-bottom:16px">
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Buscar por nome, e-mail ou matrícula…"/>
+      </div>
+      <button class="btn btn-ghost">Exportar</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Usuário</th><th>Matrícula</th><th>Empréstimos</th><th>Situação</th><th>Cadastrado em</th><th style="text-align:right">Ações</th></tr>
+        </thead>
+        <tbody id="users-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- REPORTS -->
+  <div class="screen" id="screen-reports">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h2>Relatórios</h2>
+        <p>Análises e exportações</p>
+      </div>
+      <button class="btn btn-primary" onclick="showToast('Exportando em PDF…','success')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Exportar PDF
+      </button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card" style="cursor:pointer" onclick="showToast('Abrindo relatório de empréstimos…','success')">
+        <div style="display:flex;gap:14px;align-items:flex-start">
+          <div class="stat-icon amber" style="margin:0;flex-shrink:0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:600;margin-bottom:4px">Empréstimos por período</div>
+            <div style="font-size:12.5px;color:var(--text3);line-height:1.5">Visualize o volume de empréstimos por dia, semana ou mês com comparativo histórico.</div>
+            <div style="margin-top:10px;font-size:11px;color:var(--amber)">→ Abrir relatório</div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="cursor:pointer" onclick="showToast('Abrindo ranking de obras…','success')">
+        <div style="display:flex;gap:14px;align-items:flex-start">
+          <div class="stat-icon green" style="margin:0;flex-shrink:0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:600;margin-bottom:4px">Ranking de obras</div>
+            <div style="font-size:12.5px;color:var(--text3);line-height:1.5">Títulos mais emprestados do acervo com filtro por categoria e período.</div>
+            <div style="margin-top:10px;font-size:11px;color:var(--green)">→ Abrir relatório</div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="cursor:pointer" onclick="showToast('Abrindo relatório de multas…','success')">
+        <div style="display:flex;gap:14px;align-items:flex-start">
+          <div class="stat-icon red" style="margin:0;flex-shrink:0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:600;margin-bottom:4px">Multas e inadimplência</div>
+            <div style="font-size:12.5px;color:var(--text3);line-height:1.5">Total de multas geradas, recebidas e em aberto com detalhamento por usuário.</div>
+            <div style="margin-top:10px;font-size:11px;color:var(--red)">→ Abrir relatório</div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="cursor:pointer" onclick="showToast('Abrindo relatório de usuários…','success')">
+        <div style="display:flex;gap:14px;align-items:flex-start">
+          <div class="stat-icon blue" style="margin:0;flex-shrink:0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:600;margin-bottom:4px">Usuários ativos</div>
+            <div style="font-size:12.5px;color:var(--text3);line-height:1.5">Frequência de uso por usuário, perfis de leitura e segmentação por categoria.</div>
+            <div style="margin-top:10px;font-size:11px;color:var(--blue)">→ Abrir relatório</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- MODAL: NOVO EMPRÉSTIMO -->
+<div class="modal-overlay" id="modal-loan" onclick="closeModalOutside(event,'modal-loan')">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Novo Empréstimo</h3>
+      <button class="modal-close" onclick="closeModal('modal-loan')">✕</button>
+    </div>
+    <div class="form-group">
+      <label>Usuário</label>
+      <input type="text" placeholder="Buscar usuário por nome ou matrícula…"/>
+    </div>
+    <div class="form-group">
+      <label>Livro / Exemplar</label>
+      <input type="text" placeholder="Buscar por título ou ISBN…"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Data de empréstimo</label>
+        <input type="date" value="2026-03-24"/>
+      </div>
+      <div class="form-group">
+        <label>Data de devolução</label>
+        <input type="date" value="2026-04-07"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Observações</label>
+      <input type="text" placeholder="Opcional…"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-loan')">Cancelar</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-loan');showToast('Empréstimo registrado com sucesso!','success')">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NOVO USUÁRIO -->
+<div class="modal-overlay" id="modal-user" onclick="closeModalOutside(event,'modal-user')">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Novo Usuário</h3>
+      <button class="modal-close" onclick="closeModal('modal-user')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nome</label>
+        <input type="text" placeholder="Nome completo"/>
+      </div>
+      <div class="form-group">
+        <label>Matrícula</label>
+        <input type="text" placeholder="Ex.: 01234"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>E-mail</label>
+      <input type="email" placeholder="usuario@email.com"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Telefone</label>
+        <input type="text" placeholder="(48) 9 0000-0000"/>
+      </div>
+      <div class="form-group">
+        <label>Perfil</label>
+        <select>
+          <option>Leitor</option>
+          <option>Bibliotecário</option>
+          <option>Administrador</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-user')">Cancelar</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-user');showToast('Usuário cadastrado com sucesso!','success')">Cadastrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const books = [
+  {title:"Dom Casmurro",author:"Machado de Assis",cat:"Literatura",copies:5,avail:2,cover:0},
+  {title:"1984",author:"George Orwell",cat:"Literatura",copies:3,avail:0,cover:3},
+  {title:"Sapiens",author:"Y. N. Harari",cat:"História",copies:4,avail:3,cover:2},
+  {title:"O Hobbit",author:"J.R.R. Tolkien",cat:"Literatura",copies:6,avail:1,cover:4},
+  {title:"Código Limpo",author:"Robert C. Martin",cat:"Tecnologia",copies:3,avail:3,cover:5},
+  {title:"Meditações",author:"Marco Aurélio",cat:"Filosofia",copies:2,avail:2,cover:6},
+  {title:"O Pequeno Príncipe",author:"Saint-Exupéry",cat:"Literatura",copies:8,avail:5,cover:1},
+  {title:"Breve Hist. do Tempo",author:"S. Hawking",cat:"Ciências",copies:2,avail:1,cover:7},
+  {title:"A Arte da Guerra",author:"Sun Tzu",cat:"Filosofia",copies:4,avail:4,cover:3},
+  {title:"Clean Architecture",author:"R. C. Martin",cat:"Tecnologia",copies:2,avail:2,cover:5},
+  {title:"Iracema",author:"José de Alencar",cat:"Literatura",copies:3,avail:3,cover:2},
+  {title:"A Moreninha",author:"Joaquim Macedo",cat:"Literatura",copies:2,avail:0,cover:0},
+];
+
+function renderBooks(list) {
+  const grid = document.getElementById('books-grid');
+  grid.innerHTML = list.map(b => {
+    const av = b.avail === 0 ? 'no' : b.avail <= 1 ? 'few' : 'yes';
+    const avLabel = b.avail === 0 ? 'Indisponível' : b.avail === 1 ? `${b.avail} exemplar` : `${b.avail} disponíveis`;
+    return `<div class="book-card" onclick="showToast('Abrindo "${b.title}"…','success')">
+      <div class="book-cover book-cover-${b.cover}">
+        <span class="book-avail ${av}">${avLabel}</span>
+        📖
+      </div>
+      <div class="book-info">
+        <div class="book-title">${b.title}</div>
+        <div class="book-author">${b.author}</div>
+        <div class="book-meta">
+          <span class="book-category">${b.cat}</span>
+          <span class="book-copies">${b.copies} ex.</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterBooks(q) {
+  const filtered = books.filter(b =>
+    b.title.toLowerCase().includes(q.toLowerCase()) ||
+    b.author.toLowerCase().includes(q.toLowerCase()) ||
+    b.cat.toLowerCase().includes(q.toLowerCase())
+  );
+  renderBooks(filtered);
+}
+
+function togglePill(el, cat) {
+  document.querySelectorAll('#screen-catalog .pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  if (cat === 'Todos') { renderBooks(books); return; }
+  if (cat === 'Disponíveis') { renderBooks(books.filter(b => b.avail > 0)); return; }
+  renderBooks(books.filter(b => b.cat === cat));
+}
+
+const loans = [
+  {user:"Maria Santos",email:"maria@email.com",book:"O Senhor dos Anéis",author:"Tolkien",start:"15/03/2026",due:"29/03/2026",status:"ativo",ai:0},
+  {user:"Pedro Alves",email:"pedro@email.com",book:"Dom Casmurro",author:"Machado",start:"10/03/2026",due:"24/03/2026",status:"vence hoje",ai:3},
+  {user:"João Lima",email:"joao@email.com",book:"1984",author:"Orwell",start:"05/03/2026",due:"19/03/2026",status:"atrasado",ai:2},
+  {user:"Ana Costa",email:"ana@email.com",book:"Sapiens",author:"Harari",start:"18/03/2026",due:"01/04/2026",status:"ativo",ai:1},
+  {user:"Bruno Reis",email:"bruno@email.com",book:"A Moreninha",author:"Macedo",start:"01/03/2026",due:"15/03/2026",status:"atrasado",ai:4},
+  {user:"Carla Melo",email:"carla@email.com",book:"Pequeno Príncipe",author:"Saint-Ex.",start:"20/03/2026",due:"03/04/2026",status:"renovado",ai:5},
+];
+
+function renderLoans() {
+  const tb = document.getElementById('loans-tbody');
+  tb.innerHTML = loans.map(l => {
+    const bs = l.status === 'ativo' ? 'badge-green' :
+               l.status === 'atrasado' ? 'badge-red' :
+               l.status === 'vence hoje' ? 'badge-amber' : 'badge-blue';
+    const act = l.status === 'atrasado' ?
+      `<button class="btn btn-sm btn-danger" onclick="showToast('Cobrança enviada ao usuário','error')">Notificar</button>
+       <button class="btn btn-sm btn-success" onclick="showToast('Devolução registrada!','success')">Devolver</button>` :
+      l.status === 'vence hoje' ?
+      `<button class="btn btn-sm btn-ghost">Renovar</button>
+       <button class="btn btn-sm btn-success" onclick="showToast('Devolução registrada!','success')">Devolver</button>` :
+      `<button class="btn btn-sm btn-ghost">Renovar</button>
+       <button class="btn btn-sm btn-success" onclick="showToast('Devolução registrada!','success')">Devolver</button>`;
+    return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:9px">
+          <div class="user-row-avatar avatar-${l.ai}">${l.user[0]}</div>
+          <div><div class="main-text">${l.user}</div><div class="sub-text">${l.email}</div></div>
+        </div>
+      </td>
+      <td><div class="main-text">${l.book}</div><div class="sub-text">${l.author}</div></td>
+      <td>${l.start}</td>
+      <td style="font-weight:${l.status==='atrasado'?'600':'400'};color:${l.status==='atrasado'?'var(--red)':l.status==='vence hoje'?'var(--amber)':'inherit'}">${l.due}</td>
+      <td><span class="status-badge ${bs}">${l.status.charAt(0).toUpperCase()+l.status.slice(1)}</span></td>
+      <td><div class="actions-cell">${act}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+const users = [
+  {name:"Maria Santos",email:"maria@email.com",mat:"00012",loans:8,status:"Ativo",reg:"Jan 2025",ai:0},
+  {name:"Pedro Alves",email:"pedro@email.com",mat:"00034",loans:3,status:"Ativo",reg:"Mar 2024",ai:1},
+  {name:"João Lima",email:"joao@email.com",mat:"00234",loans:12,status:"Bloqueado",reg:"Ago 2023",ai:2},
+  {name:"Ana Costa",email:"ana@email.com",mat:"00456",loans:5,status:"Ativo",reg:"Fev 2025",ai:3},
+  {name:"Fernanda Cruz",email:"fern@email.com",mat:"00891",loans:7,status:"Com multa",reg:"Jun 2024",ai:4},
+  {name:"Carlos Rocha",email:"carlos@email.com",mat:"01200",loans:2,status:"Ativo",reg:"Nov 2025",ai:5},
+];
+
+function renderUsers() {
+  const tb = document.getElementById('users-tbody');
+  tb.innerHTML = users.map(u => {
+    const bs = u.status === 'Ativo' ? 'badge-green' :
+               u.status === 'Bloqueado' ? 'badge-red' : 'badge-amber';
+    return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:9px">
+          <div class="user-row-avatar avatar-${u.ai}">${u.name[0]}</div>
+          <div><div class="main-text">${u.name}</div><div class="sub-text">${u.email}</div></div>
+        </div>
+      </td>
+      <td style="font-family:var(--font-mono);font-size:12px">${u.mat}</td>
+      <td style="text-align:center">${u.loans}</td>
+      <td><span class="status-badge ${bs}">${u.status}</span></td>
+      <td>${u.reg}</td>
+      <td><div class="actions-cell">
+        <button class="btn btn-sm btn-ghost" onclick="showToast('Perfil de ${u.name} aberto','success')">Ver perfil</button>
+        <button class="btn btn-sm btn-danger" onclick="showToast('Usuário bloqueado','error')">Bloquear</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function go(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.querySelector('.main').scrollTop = 0;
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeModalOutside(e, id) { if (e.target.id === id) closeModal(id); }
+
+let toastTimer;
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show toast-'+(type||'success');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = 'toast', 3000);
+}
+
+renderBooks(books);
+renderLoans();
+renderUsers();
+</script>
+</body>
+</html>
